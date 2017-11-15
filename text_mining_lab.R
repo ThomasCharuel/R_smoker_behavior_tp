@@ -75,10 +75,21 @@ a <- merge(
 a$ImprovementWeek1 <- ((a$countWeek0 - a$countWeek1) / a$countWeek0) * 100
 a$ImprovementWeek2 <- ((a$countWeek1 - a$countWeek2) / a$countWeek1) * 100
 
-## Smoking pattern
+
+## Mean smoking pattern per weekday
+# Mean smoking pattern per weekday is the smoking pattern (type and time interval) with the highest cigarettes consumed per weekday
+cigarettesCountPerWeekdayPatternPerUser <- summarize(group_by(userdata, User, Weekday, TimeInterval, Type), count=n())
+# Compute highest count per weekday
+meanSmokingPatternCount <- aggregate(count ~ User + Weekday, cigarettesCountPerWeekdayPatternPerUser, max)
+# Merge to link user and mean smoking patterns
+meanSmokingPatternPerWeekday <- merge(cigarettesCountPerWeekdayPatternPerUser, meanSmokingPatternCount)
+# remove rows with identical user and count
+meanSmokingPatternPerWeekday <- meanSmokingPatternPerWeekday[!duplicated(meanSmokingPatternPerWeekday[,c('User', 'Weekday', 'count')]),]
+# Remove count column
+meanSmokingPatternPerWeekday <- meanSmokingPatternPerWeekday[, c("User", "Weekday", "TimeInterval", "Type")]
 
 
-## Smoking density per week
+## Find the week period with the most and least smoking density 
 # Count number of cigarettes per user per week period
 cigarettesCountPerWeekPeriodPerUser <- summarize(group_by(userdata, User, Weekday, TimeInterval), count=n())
 # Compute least and most smoking density per user
@@ -95,11 +106,20 @@ mostSmokingDensityPerUserPerWeekPeriod <- mostSmokingDensityPerUserPerWeekPeriod
 
 # Remove count column
 leastSmokingDensityPerUserPerWeekPeriod <- leastSmokingDensityPerUserPerWeekPeriod[, c("User", "Weekday", "TimeInterval")]
-mostSmokingDensityPerUserPerWeekPeriod <- mostSmokingDensityPerUserPerWeekPeriod[, c("User", "Weekday", "TimeInterv
+mostSmokingDensityPerUserPerWeekPeriod <- mostSmokingDensityPerUserPerWeekPeriod[, c("User", "Weekday", "TimeInterval")]
 
 
 ### General all-user stats
 
-## Smoking intervals
+## Users classified number of smoking cigarettes intervals, 
+## by smoking history time (smokers tend to smoke the most 
+## in what time interval, to use the cheat mode in what time interval, etc.)
 
-## 
+# smokers tend to smoke at what time interval
+timeIntervalTendencies <- summarize(group_by(userdata, TimeInterval), count=n())
+# Order time intervals
+timeIntervalTendencies <- timeIntervalTendencies[order(-timeIntervalTendencies$count),]
+
+# Smokers tend to smoke with which mode in what time interval
+timeIntervalTendenciesPerMode <- summarize(group_by(userdata, Type, TimeInterval), count=n())
+timeIntervalTendenciesPerMode <- timeIntervalTendenciesPerMode[order(timeIntervalTendenciesPerMode$Type, -timeIntervalTendenciesPerMode$count),]
