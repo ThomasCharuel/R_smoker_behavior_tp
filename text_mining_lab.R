@@ -77,22 +77,25 @@ a$ImprovementWeek2 <- ((a$countWeek1 - a$countWeek2) / a$countWeek1) * 100
 
 ## Smoking pattern
 
+
 ## Smoking density per week
-# Compute the number of consumed cigarettes per week period
-a <- summarize(group_by(userdata, User, Weekday, TimeInterval), count=n())
-b <- summarize(group_by(a, User), leastSmoking=min(count), maxSmoking=max(count))
-d <- merge(x = a, y=b, by="User")
+# Count number of cigarettes per user per week period
+cigarettesCountPerWeekPeriodPerUser <- summarize(group_by(userdata, User, Weekday, TimeInterval), count=n())
+# Compute least and most smoking density per user
+leastSmokingDensityPerUser <- aggregate(count ~ User, cigarettesCountPerWeekPeriodPerUser, min)
+mostSmokingDensityPerUser <- aggregate(count ~ User, cigarettesCountPerWeekPeriodPerUser, max)
 
-e <- data.frame(User=d$User[d$count == d$leastSmoking])
-e$TimeIntervalLeastSmoking <- d$TimeInterval[d$count == d$leastSmoking]
-e$WeekdayLeastSmoking <- d$Weekday[d$count == d$leastSmoking]
-e$TimeIntervalMaxSmoking <- d$TimeInterval[d$count == d$maxSmoking]
-e$WeekdayMaxSmoking <- d$Weekday[d$count == d$maxmoking]
-f <- data.frame(User=unique(userdata$User))
-unique(inner_join(f, e))
-e$time2 <- c$TimeInterval[c$count == c$mostSmokingDensity]
+# Merge to link a user to his least smoking density week period
+leastSmokingDensityPerUserPerWeekPeriod <- merge(cigarettesCountPerWeekPeriodPerUser, leastSmokingDensityPerUser)
+mostSmokingDensityPerUserPerWeekPeriod <- merge(cigarettesCountPerWeekPeriodPerUser, mostSmokingDensityPerUser)
 
-Density = as.data.frame(aggregate(cbind(Weekday, TimeInterval) ~ User, data=userdata, summary))
+# remove rows with identical user and count
+leastSmokingDensityPerUserPerWeekPeriod <- leastSmokingDensityPerUserPerWeekPeriod[!duplicated(leastSmokingDensityPerUserPerWeekPeriod[,c('User','count')]),]
+mostSmokingDensityPerUserPerWeekPeriod <- mostSmokingDensityPerUserPerWeekPeriod[!duplicated(mostSmokingDensityPerUserPerWeekPeriod[,c('User','count')]),]
+
+# Remove count column
+leastSmokingDensityPerUserPerWeekPeriod <- leastSmokingDensityPerUserPerWeekPeriod[, c("User", "Weekday", "TimeInterval")]
+mostSmokingDensityPerUserPerWeekPeriod <- mostSmokingDensityPerUserPerWeekPeriod[, c("User", "Weekday", "TimeInterv
 
 
 ### General all-user stats
